@@ -531,6 +531,8 @@ class Grid {
       this.#selectedObjects = null;
     if (this.selection.mode === ENUM_MODE.mutiple)
       this.#selectedObjects = [];
+    this.selection.fn(this.#selectedObjects);
+    
     const rows = this.#getRows();
     rows.forEach(row => row.classList.remove(this.#classTableSelected));
     if (this.selection.selectAllId) {

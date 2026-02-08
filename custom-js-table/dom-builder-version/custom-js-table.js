@@ -441,6 +441,7 @@ class Grid {
   #onMultipleRowSelected(row) {
     const uuid = row.getAttribute('data-uuid');
     const obj = this.data.find(v => v[this.uuidProp] === uuid);
+
     arrayAddOrRemove(this.#selectedObjects, obj);
     row.classList.toggle(this.#classTableSelected);
 
@@ -452,14 +453,12 @@ class Grid {
 
     if (this.selection.selectAllId) {
       // Remove 'select all' button style
-      const selectAllBtn = document.getElementById(this.selection.selectAllId);
       const rows = this.#getRows();
-      if (this.#selectedObjects.length === rows.length) {
-        selectAllBtn.classList.add('btn-primary');
-      } else {
-        if (selectAllBtn.classList.contains('btn-primary'))
-          selectAllBtn.classList.remove('btn-primary');
-      };
+      DOM(this.selection.selectAllId)
+        .if(this.#selectedObjects.length === rows.length)
+        .classes.add('btn-primary')
+        .elseIf(selectAllBtn => selectAllBtn.classList.contains('btn-primary'))
+        .classes.remove('btn-primary');
     };
 
     this.selection.fn(this.#selectedObjects);
@@ -468,43 +467,43 @@ class Grid {
   ////////////////
   #resetNavAfterSelection(row, rows) {
     let index = -1;
+
     rows.forEach((v, i) => {
       v.classList.remove(this.#classTableActive);
       if (v === row) index = i;
     });
+
     this.#currentIndex = index;
   };
 
   ////////////////
   #addSelectAll() {
     // Only available for 'multiple' mode selection
-    const selectAllBtn = document.getElementById(this.selection.selectAllId);
+    DOM(this.selection.selectAllId)
+      .event('click', (selectAllBtn) => {
+        const rows = this.#getRows();
 
-    selectAllBtn.addEventListener('click', () => {
-      const rows = this.#getRows();
+        if (this.#selectedObjects.length === rows.length) {
+          // All rows are selected -> deselect all
+          this.#clearSelection();
+        }
+        
+        else {
+          // Not all rows are selected -> select all
+          rows.forEach(row => {
+            if (!row.classList.contains(this.#classTableSelected))
+              this.#onMultipleRowSelected(row);
+          });
 
-      if (this.#selectedObjects.length === rows.length) {
-        // All rows are selected -> deselect all
-        this.#clearSelection();
-      }
-      
-      else {
-        // Not all rows are selected -> select all
-        rows.forEach(row => {
-          if (!row.classList.contains(this.#classTableSelected))
-            this.#onMultipleRowSelected(row);
-        });
-        selectAllBtn.classList.add('btn-primary');
-      };
-    });
+          selectAllBtn.classList.add('btn-primary');
+        };
+      });
   };
   
   ////////////////
   #addClearSelection() {
-    const clearButton = document.getElementById(this.selection.clearId);
-    clearButton.addEventListener('click', () => {
-      this.#clearSelection();
-    });
+    DOM(this.selection.clearId)
+      .event('click', () => this.#clearSelection());
   };
 
   ////////////////
@@ -513,11 +512,12 @@ class Grid {
       this.#selectedObjects = null;
     if (this.selection.mode === ENUM_MODE.mutiple)
       this.#selectedObjects = [];
+    this.selection.fn(this.#selectedObjects);
+
     const rows = this.#getRows();
-    rows.forEach(row => row.classList.remove(this.#classTableSelected));
+    rows.forEach(row => DOM(row).classes.remove(this.#classTableSelected));
     if (this.selection.selectAllId) {
-      const selectAllBtn = document.getElementById(this.selection.selectAllId);
-      selectAllBtn.classList.remove('btn-primary');
+      DOM(this.selection.selectAllId).classes.remove('btn-primary');
     };
   };
 
@@ -636,10 +636,9 @@ class Grid {
 
   ////////////////
   #addCancelSearch() {
-    document
-      .getElementById(this.search.cancel)
-      .addEventListener('click', () => {
-        const searchInput = document.getElementById(this.search.id);
+    DOM(this.search.cancel)
+      .event('click', () => {
+        const searchInput = DOM(this.search.id).node;
         if (searchInput.value === '') return;
         searchInput.value = '';
         this.#searchKeyword = '';
@@ -763,6 +762,7 @@ class Grid {
       ( this.#isListView && !this.listView.sortId) ||
       !this.#sortKey || this.#sortKey === ''
     ) return data;
+
     return [...data].sort((a, b) => {
       if (a[this.#sortKey] < b[this.#sortKey]) return this.#sortAsc ? -1 :  1;
       if (a[this.#sortKey] > b[this.#sortKey]) return this.#sortAsc ?  1 : -1;
@@ -775,15 +775,17 @@ class Grid {
   /////////////////////////////////////////
   // Resize columns
   #addResize() {
-    const modal = document.getElementById(this.resize.modalBodyId);
-    const ul = document.createElement('ul');
-    modal.appendChild(ul);
-    ul.setAttribute('class', 'list-group');
+    const store = {};
+
+    DOM(this.resize.modalBodyId)
+      .appendChild('ul')
+      .class('list-group')
+      .saveGlobal(store, 'ul');
     
     document.addEventListener("DOMContentLoaded", () => {
       document.addEventListener('show.bs.modal', (e) => {
         if (e.target.id !== this.resize.modalId) return;
-        this.#setResizeModal(ul);
+        this.#setResizeModal(store.ul);
       });
     });
   };
@@ -794,33 +796,34 @@ class Grid {
 
     const table = document.getElementById(this.table);
     const thead = table.querySelector('thead');
-    const thead_cells = thead.querySelectorAll('th');
-    
-    let headerColsWidths = [];
+    const columns = thead.querySelectorAll('th');
+
     let checkNotInit = false;
-    for (let i = 0, l = thead_cells.length; i < l; i++) {
-      const col = thead_cells[i];
+    for (let i = 0, l = columns.length; i < l; i++) {
+      const col = columns[i];
       if (!col.style.width || col.style.width === 'auto') {
         checkNotInit = true;
         break;
       };
     };
     
+    let columnsWidths = [];
+
     // Cols widths were not initialized
     if (checkNotInit) {
       const tableWidth = table.offsetWidth;
-      thead_cells.forEach(col => {
-        headerColsWidths.push(Number(col.offsetWidth * 100 / tableWidth));
+      columns.forEach(col => {
+        columnsWidths.push(Number(col.offsetWidth * 100 / tableWidth));
       });
-      headerColsWidths = roundPercentages(headerColsWidths);
+      columnsWidths = roundPercentages(columnsWidths);
     }
 
     // Cols widths were initialized
     else {
-      thead_cells.forEach(col => {
+      columns.forEach(col => {
         const width = col.style.width.replace('%', '');
         const widthNum = Number(width);
-        headerColsWidths.push(Number(widthNum));
+        columnsWidths.push(Number(widthNum));
       });
     };
     
@@ -851,12 +854,12 @@ class Grid {
             id: `resize_col_${column.id}`,
             min: '0',
             max: '100',
-            value: Number(headerColsWidths[i]) + Number(shift),
-            dataOldValue: Number(headerColsWidths[i]) + Number(shift),
+            value: Number(columnsWidths[i]) + Number(shift),
+            dataOldValue: Number(columnsWidths[i]) + Number(shift),
             dataIndex: i,
           })
           .event('input', (input) => {
-            this.#handleResize(Number(input.value), input, ul, thead_cells);
+            this.#handleResize(Number(input.value), input, ul, columns);
           })
           .saveGlobal(store, 'input')
 
@@ -865,17 +868,17 @@ class Grid {
       
       store.btnLeft.addEventListener('click', () => {
         const newVal = Number(store.input.value) - this.#resizeColsIncrement;
-        if (this.#handleResize(Number(newVal), store.input, ul, thead_cells) !== -1)
+        if (this.#handleResize(Number(newVal), store.input, ul, columns) !== -1)
           store.input.value = newVal;
       });
 
       store.btnRight.addEventListener('click', () => {
         const newVal = Number(store.input.value) + this.#resizeColsIncrement;
-        if (this.#handleResize(Number(newVal), store.input, ul, thead_cells) !== -1)
+        if (this.#handleResize(Number(newVal), store.input, ul, columns) !== -1)
           store.input.value = newVal;
       });
 
-      shift += Number(headerColsWidths[i]);
+      shift += Number(columnsWidths[i]);
     };
     
     // Reset button
@@ -895,7 +898,7 @@ class Grid {
   };
 
   ////////////////
-  #handleResize(newValue, input, ul, thead_cells) {
+  #handleResize(newValue, input, ul, columns) {
     if (this.#isListView) return;
 
     const ranges = ul.querySelectorAll('input');
@@ -976,8 +979,8 @@ class Grid {
     };
 
     // Update table header columns
-    for (let i = 0, l = thead_cells.length; i < l; i++) {
-      const col = thead_cells[i];
+    for (let i = 0, l = columns.length; i < l; i++) {
+      const col = columns[i];
       col.style.width = newHeaderColsWidth[i] + '%';
       const uuid = col.getAttribute('data-key');
       const colObj = this.columns.find(v => v.id === uuid);
@@ -1195,13 +1198,21 @@ class Grid {
     });
 
     if (this.pagination.resetBtnId) {
-      const resetBtn = document.getElementById(this.pagination.resetBtnId);
+      DOM(this.pagination.resetBtnId)
+        .event('click', () => {
+          this.pagination.limitPerPage = DEFAULT_PAGE_LIMIT;
+          limitInput.value = DEFAULT_PAGE_LIMIT;
+          this.pagination.page = 1;
+          this.renderTable();
+        });
+      
+      /*const resetBtn = document.getElementById(this.pagination.resetBtnId);
       resetBtn.addEventListener('click', () => {
         this.pagination.limitPerPage = DEFAULT_PAGE_LIMIT;
         limitInput.value = DEFAULT_PAGE_LIMIT;
         this.pagination.page = 1;
         this.renderTable();
-      });
+      });*/
     };
   };
   
@@ -1557,7 +1568,7 @@ class Grid {
         .getElementById(this.pagination.firstShowingLineId)
         .innerText = firstShowingLine;
     };
-
+    
     if (this.pagination.lastShowingLineId) {
       let lastShowingLine = Number(start) + Number(this.pagination.limitPerPage);
       if (this.#dataLengthBeforePagination < lastShowingLine)
