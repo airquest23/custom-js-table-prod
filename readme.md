@@ -10,9 +10,9 @@ As a simple JS class, you can just copy paste it in your projects. It doesn't ne
 
 To check out the demos / examples, just download this repo and open the '.html' files in the examples folder.
 
-You can also check the examples online. There is a regular JS version here : ...
-And a DOMBuilder version here : ...
-(You can learn more about DOMBuilder (one of my creation) here : ...).
+You can also check the examples online. There is a regular JS version here : [html preview](https://rawcdn.githack.com/airquest23/custom-js-table-prod/b494463839ff8a5d0321d6060c9fec265ba0a74c/examples/regular-js-version.html) / [raw file](./examples/regular-js-version.html).
+And a DOMBuilder version here : [html preview](https://rawcdn.githack.com/airquest23/custom-js-table-prod/b494463839ff8a5d0321d6060c9fec265ba0a74c/examples/dom-builder-version.html) / [raw file](./examples/regular-js-version.html).
+(You can learn more about DOMBuilder, one of my creation, [on this github repo](https://github.com/airquest23/dom-builder-prod)).
 
 ## Basics
 
