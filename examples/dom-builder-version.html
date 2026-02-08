@@ -473,8 +473,8 @@
         if (!checkNotEmptyArray()) return;
         if (Array.isArray(selectedObject) && selectedObject.length > 1) {
           swal({
-            title: 'Object updated',
-            text: 'You must select only one object!',
+            title: 'Error',
+            text: 'Error: you must select only one object!',
             icon: "error",
           });
         }
