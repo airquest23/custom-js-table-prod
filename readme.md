@@ -2,7 +2,7 @@
 
 ## About
 
-This is a pure custom JS table component (datagrid or datatable), with all features.
+This is a pure JS custom table component (datagrid or datatable), with all features.
 
 ## Installation
 
